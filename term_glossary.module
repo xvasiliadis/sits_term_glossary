@@ -1,0 +1,305 @@
+<?php
+
+/**
+ * @file
+ * Contains term_glossary.module.
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Cache\CacheBackendInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Config\ImmutableConfig;
+
+/**
+ * Implements hook_help().
+ */
+function term_glossary_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the glossary module.
+    case 'help.page.term_glossary':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('glossary module for plan') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function term_glossary_theme() {
+  return [
+    'glossary_alphabetical_bock' => [
+      'variables' => [
+        'content' => NULL,
+        'type' => NULL,
+      ],
+      'template' => 'glossary-alphabetical-bock',
+      'render element' => 'children',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function term_glossary_node_presave(EntityInterface $entity) {
+  $type = $entity->getType();
+  if (!empty($type)) {
+    $config = _glossary_get_config();
+    $selected_types = _glossary_get_config_content_types($config);
+    if (!empty($selected_types) && in_array($type, $selected_types)) {
+      // Ok this content type is enabled now lets get the fields.
+      $scan_fields = _glossary_get_selected_fields_from_config($config, $type);
+      if (!empty($scan_fields)) {
+        // Here get terms.
+        $vocab = $config->get('vocab');
+        $term_list = _glossary_get_terms($vocab);
+        if (!empty($term_list)) {
+          // Ok cool we have at least one term now lets do stuff.
+          foreach ($scan_fields as $field_name_to_scan) {
+            $value_raw = NULL;
+            $class = get_class($entity->{$field_name_to_scan});
+            if ($class == 'Drupal\Core\Field\FieldItemList') {
+              if (!empty($entity->{$field_name_to_scan}->value)) {
+                $value_raw = $entity->{$field_name_to_scan}->value;
+                if (!empty($value_raw)) {
+                  $new_value = _replace_field_value($value_raw, $term_list);
+                  // @TODO We need to check field config for this.
+                  if ($field_name_to_scan == 'body') {
+                    $entity->{$field_name_to_scan} = [
+                      'format' => 'full_html',
+                      'value' => $new_value,
+                    ];
+                  }
+                  else {
+                    $entity->set($field_name_to_scan, $new_value);
+                  }
+                }
+              }
+            }
+
+            if ($class == 'Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList') {
+              if (!empty($entity->{$field_name_to_scan}->referencedEntities())) {
+                $entities = $entity->{$field_name_to_scan}->referencedEntities();
+                _replace_entity_ref_fields_values($entities, $term_list);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper for EntityReferenceRevisionsFieldItemList fields to be replaced.
+ *
+ * @param array|null $entities
+ *   An array of Entities.
+ * @param array|null $term_list
+ *   Array of term lists.
+ */
+function _replace_entity_ref_fields_values($entities, $term_list) {
+  // This is used so our paragraph fields can be scanned as well.
+  $accept_only = [
+    'text_with_summary',
+    'text_long',
+    'string_long',
+    'text',
+  ];
+  foreach ($entities as $entity) {
+    $entity_type_id = $entity->getEntityType()->id();
+    $bundle = $entity->bundle();
+    if (!empty($entity_type_id) && !empty($bundle)) {
+      $field_definition = \Drupal::entityManager()->getFieldDefinitions($entity_type_id, $bundle);
+      foreach ($field_definition as $key => $def) {
+        if (get_class($def) === 'Drupal\field\Entity\FieldConfig') {
+          try {
+            $field_type = $def->get('field_type');
+            if (in_array($field_type, $accept_only)) {
+              $value_raw = $entity->{$key}->value;
+              if (!empty($value_raw)) {
+                $new_value = _replace_field_value($value_raw, $term_list);
+                $entity->{$key} = [
+                  'format' => 'full_html',
+                  'value' => $new_value,
+                ];
+                $entity->save();
+              }
+            }
+          }
+          catch (\Exception $e) {
+            // @todo probably log this.
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper function to replace term with value.
+ *
+ * @param mixed $value_raw
+ *   The raw value.
+ * @param array|null $term_list
+ *   The term list.
+ *
+ * @return string
+ *   returns a string.
+ */
+function _replace_field_value($value_raw, $term_list) {
+  // @TODO Here handle more field types.
+  $new_value = '';
+  if (!empty($value_raw)) {
+    $new_value = $value_raw;
+    foreach ($term_list as $term_id => $term_array) {
+      $name = $term_array['name'];
+      $replace_string = '<span class="glos-term" data-gterm="' . $term_id . '">' . $name . '</span>';
+
+      if (strpos($replace_string, $new_value) !== FALSE) {
+        // Yes it has been replaced.
+      }
+      else {
+        $new_value = str_ireplace($name, $replace_string, $new_value);
+      }
+    }
+  }
+
+  return $new_value;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function term_glossary_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  $type = $entity->getType();
+  if (!empty($type)) {
+    $config = _glossary_get_config();
+    $selected_types = _glossary_get_config_content_types($config);
+    if (!empty($selected_types) && in_array($type, $selected_types)) {
+      // @TODO support make this configurable.
+      $integration_type = $config->get('integration_type');
+      if ($view_mode == 'full' && $integration_type == 'default') {
+        $build['#attached']['library'][] = 'term_glossary/glossary-css';
+        $build['#attached']['library'][] = 'term_glossary/glossary-js';
+        $build['glossary-dialog'] = [
+          '#markup' => '<div id="glossary-dialog" title="Term definition"><div id="glossary-dialog-inner"></div></div>',
+        ];
+      }
+    }
+  }
+}
+
+/**
+ * This function gets terms in key value optimised for speed.
+ *
+ * @param string $vocab
+ *   The vocab name.
+ *
+ * @return array|EntityInterface[]
+ *   Returns and array.
+ *
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+ */
+function _glossary_get_terms($vocab) {
+  $cid = 'glossary_terms_array';
+  $data = \Drupal::cache()->get($cid);
+  if (empty($data)) {
+    $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+    $terms = $term_storage->loadByProperties(['vid' => $vocab]);
+    $terms_array = [];
+    foreach ($terms as $tid => $term) {
+      $terms_array[$tid] = [
+        'tid' => $tid,
+        'name' => $term->getName(),
+      ];
+    }
+    $terms = $terms_array;
+    \Drupal::cache()->set($cid, $terms_array, CacheBackendInterface::CACHE_PERMANENT, []);
+  }
+  else {
+    $query = \Drupal::entityQuery('taxonomy_term');
+    $query->condition('vid', $vocab);
+    $entity_ids = $query->execute();
+    // Someone could have added new term since last cache.
+    if (count($entity_ids) == count($data->data)) {
+      $terms = $data->data;
+    }
+    else {
+      // Set cache again.
+      $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+      $terms = $term_storage->loadByProperties(['vid' => $vocab]);
+      $terms_array = [];
+      foreach ($terms as $tid => $term) {
+        $terms_array[$tid] = [
+          'tid' => $tid,
+          'name' => $term->getName(),
+        ];
+      }
+      $terms = $terms_array;
+      \Drupal::cache()->set($cid, $terms_array, CacheBackendInterface::CACHE_PERMANENT, []);
+    }
+
+  }
+  return $terms;
+}
+
+/**
+ * Helper function to get field form config.
+ */
+function _glossary_get_selected_fields_from_config(ImmutableConfig $config, $content_type) {
+  $fields = [];
+  $raw = $config->get('selected_fields');
+  if ($content_type == 'all') {
+    $fields = $raw;
+  }
+  else {
+    if (!empty($raw[$content_type])) {
+      $fields = $raw[$content_type];
+    }
+  }
+  return $fields;
+}
+
+/**
+ * Helper to get the glossary config.
+ *
+ * @return mixed
+ *   Returns the config object or null.
+ */
+function _glossary_get_config() {
+  $configFactory = \Drupal::service('config.manager')->getConfigFactory();
+  return $configFactory->get('term_glossary.glossaryconfig');
+}
+
+/**
+ * Function to get the selected content types from config.
+ *
+ * @param \Drupal\Core\Config\ImmutableConfig $config
+ *   The config.
+ *
+ * @return array
+ *   Returns an array I hope.
+ */
+function _glossary_get_config_content_types(ImmutableConfig $config) {
+  $return = [];
+  $selected_config = $config->get('content_types');
+  if (!empty($selected_config)) {
+    $selected = [];
+    foreach ($selected_config as $key => $val) {
+      if ($key == $val) {
+        $selected[] = $val;
+      }
+    }
+  }
+  if (!empty($selected)) {
+    $return = $selected;
+  }
+  return $return;
+}

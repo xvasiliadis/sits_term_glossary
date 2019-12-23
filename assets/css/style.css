@@ -1,0 +1,25 @@
+#glossary-alpha-block li a {
+  border: none;
+  text-decoration: none;
+  color: #333333;
+  padding: 5px 10px;
+  margin: 0 5px;
+  background: #bbbbbb;
+  border-radius: 3px;
+}
+
+#glossary-alpha-block li a.active {
+  background: #187bb8;
+  color: #fff;
+  text-decoration: unset;
+}
+
+#glossary-alpha-block ul {
+  padding: 0px;
+  display: inline-block;
+}
+
+#glossary-alpha-block li {
+  float: left;
+  list-style: none;
+}

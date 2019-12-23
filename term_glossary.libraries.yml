@@ -1,0 +1,26 @@
+glossary.alpha:
+  css:
+    theme:
+      assets/css/style.css: {}
+  js:
+    assets/js/block-alpah.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupalSettings
+    - core/drupal
+    - core/jquery.once
+
+glossary-css:
+  css:
+    theme:
+      assets/css/content-style.css: {}
+
+glossary-js:
+  js:
+    assets/js/glossary-content-dialog.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupalSettings
+    - core/drupal
+    - core/jquery.once
+    - core/drupal.dialog.ajax
