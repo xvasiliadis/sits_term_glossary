@@ -32,7 +32,7 @@
                     }
                 });
                 // Call Ajax here.
-                var url = '/glossary-get-term-by-id/' + termId;
+                var url = '/drupal9/web/glossary-get-term-by-id/' + termId;
                 $.ajax({
                     url:url,
                     dataType: "json",

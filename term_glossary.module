@@ -115,7 +115,7 @@ function _replace_entity_ref_fields_values($entities, $term_list) {
     $entity_type_id = $entity->getEntityType()->id();
     $bundle = $entity->bundle();
     if (!empty($entity_type_id) && !empty($bundle)) {
-      $field_definition = \Drupal::entityManager()->getFieldDefinitions($entity_type_id, $bundle);
+      $field_definition = \Drupal::service('entity_field.manager')->getFieldDefinitions($entity_type_id, $bundle);
       foreach ($field_definition as $key => $def) {
         if (get_class($def) === 'Drupal\field\Entity\FieldConfig') {
           try {

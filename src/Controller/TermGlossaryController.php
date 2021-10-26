@@ -5,7 +5,7 @@ namespace Drupal\term_glossary\Controller;
 use Drupal\Core\Config\ConfigManagerInterface;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Database\Driver\pgsql\Connection;
+use Drupal\Core\Database\Driver\mysql\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,9 +18,9 @@ use Drupal\Component\Utility\Html;
 class TermGlossaryController extends ControllerBase {
 
   /**
-   * Drupal\Core\Database\Driver\pgsql\Connection definition.
+   * Drupal\Core\Database\Driver\mysql\Connection definition.
    *
-   * @var \Drupal\Core\Database\Driver\pgsql\Connection
+   * @var \Drupal\Core\Database\Driver\mysql\Connection
    */
   protected $database;
 
@@ -58,13 +58,13 @@ class TermGlossaryController extends ControllerBase {
   public function __construct(
     Connection $database,
     EntityTypeManagerInterface $entity_type_manager,
-    ContainerAwareInterface $entity_query,
+    //ContainerAwareInterface $entity_query,
     ConfigManagerInterface $config_manager,
     RequestStack $request_stack
   ) {
     $this->database = $database;
     $this->entityTypeManager = $entity_type_manager;
-    $this->entityQuery = $entity_query;
+    //$this->entityQuery = $entity_query;
     $this->configManager = $config_manager;
     $this->requestStack = $request_stack;
   }
@@ -76,7 +76,7 @@ class TermGlossaryController extends ControllerBase {
     return new static(
       $container->get('database'),
       $container->get('entity_type.manager'),
-      $container->get('entity.query'),
+      //$container->get('entity.query'),
       $container->get('config.manager'),
       $container->get('request_stack')
     );

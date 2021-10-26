@@ -2,4 +2,5 @@ name: 'Taxonomy Term Glossary'
 type: module
 description: 'Glossary module for made by XVT Solutions'
 core: 8.x
+core_version_requirement: ^8 || ^9
 package: 'Custom'

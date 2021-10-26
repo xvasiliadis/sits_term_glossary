@@ -7,7 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 
 /**
  * Class TermGlossaryConfigForm.
@@ -26,7 +26,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
    *
    * @var \Drupal\Core\Entity\EntityManagerInterface
    */
-  protected $entityManager;
+  protected $entityFieldManager;
 
   /**
    * Constructs a new GlossaryConfigForm object.
@@ -34,11 +34,11 @@ class TermGlossaryConfigForm extends ConfigFormBase {
   public function __construct(
     ConfigFactoryInterface $config_factory,
     EntityTypeManagerInterface $entity_type_manager,
-    EntityManagerInterface $entity_manager
+    EntityFieldManagerInterface $entity_field_manager
   ) {
     parent::__construct($config_factory);
     $this->entityTypeManager = $entity_type_manager;
-    $this->entityManager = $entity_manager;
+    $this->entityFieldManager = $entity_field_manager;
     $this->configFactory = $config_factory;
   }
 
@@ -49,7 +49,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
     return new static(
       $container->get('config.factory'),
       $container->get('entity_type.manager'),
-      $container->get('entity.manager')
+      $container->get('entity_field.manager')
     );
   }
 
@@ -225,7 +225,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
 
     foreach ($selected as $type) {
       $field_stuff[$type] = [];
-      $bundle_fields = $this->entityManager->getFieldDefinitions('node', $type);
+      $bundle_fields = $this->entityFieldManager->getFieldDefinitions('node', $type);
       foreach ($bundle_fields as $key => $data) {
         if (!in_array($key, $not_needed)) {
           // @todo exclude by type here.
@@ -304,7 +304,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
     if (!empty($selected)) {
       foreach ($selected as $content_type) {
         foreach ($_POST as $key => $value) {
-          if (strpos($key, $content_type) !== FALSE) {
+          if ( (!empty($content_type) && strpos($key, $content_type) !== FALSE)) {
             $explode = explode('~', $key);
             $data[$content_type][] = $explode[1];
           }
