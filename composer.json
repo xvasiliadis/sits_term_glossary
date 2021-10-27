@@ -3,6 +3,7 @@
     "description": "An example composer.json file for a custom module.",
     "type": "drupal-custom-module",
     "homepage": "https://www.drupal.org",
+    "minimum-stability": "dev",
     "require": {
         "drupal/token": "*",
         "drupal/ctools": "*"
