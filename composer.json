@@ -5,7 +5,7 @@
     "type": "drupal-custom-module",
     "license": "GPL-2.0+",
     "homepage": "https://www.drupal.org",
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "require": {    },
     "extra": {
         "drush": {
