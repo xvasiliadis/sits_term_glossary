@@ -1,13 +1,12 @@
 {
     "name": "xvasiliadis/term_glossary",
+    "version": "1.0",
     "description": "An example composer.json file for a custom module.",
     "type": "drupal-custom-module",
+    "license": "GPL-2.0+",
     "homepage": "https://www.drupal.org",
     "minimum-stability": "dev",
-    "require": {
-        "drupal/token": "*",
-        "drupal/ctools": "*"
-    },
+    "require": {    },
     "extra": {
         "drush": {
             "services": {
