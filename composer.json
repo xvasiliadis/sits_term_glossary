@@ -1,0 +1,17 @@
+{
+    "name": "drupal/dg_term_glossary",
+    "description": "An example composer.json file for a custom module.",
+    "type": "drupal-custom-module",
+    "homepage": "https://www.drupal.org",
+    "require": {
+        "drupal/token": "*",
+        "drupal/ctools": "*"
+    },
+    "extra": {
+        "drush": {
+            "services": {
+                "drush.services.yml": "^9 || ^10"
+            }
+        }
+    }
+}
