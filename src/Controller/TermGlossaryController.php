@@ -7,13 +7,12 @@ use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database\Driver\mysql\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Component\Utility\Html;
 
 /**
- * Class TermGlossaryController.
+ * Class TermGlossaryController defenition.
  */
 class TermGlossaryController extends ControllerBase {
 
@@ -58,13 +57,13 @@ class TermGlossaryController extends ControllerBase {
   public function __construct(
     Connection $database,
     EntityTypeManagerInterface $entity_type_manager,
-    //ContainerAwareInterface $entity_query,
+    // ContainerAwareInterface $entity_query,.
     ConfigManagerInterface $config_manager,
     RequestStack $request_stack
   ) {
     $this->database = $database;
     $this->entityTypeManager = $entity_type_manager;
-    //$this->entityQuery = $entity_query;
+    // $this->entityQuery = $entity_query;
     $this->configManager = $config_manager;
     $this->requestStack = $request_stack;
   }
@@ -76,7 +75,7 @@ class TermGlossaryController extends ControllerBase {
     return new static(
       $container->get('database'),
       $container->get('entity_type.manager'),
-      //$container->get('entity.query'),
+      // $container->get('entity.query'),
       $container->get('config.manager'),
       $container->get('request_stack')
     );
@@ -91,7 +90,7 @@ class TermGlossaryController extends ControllerBase {
   public function apiSearchPerLetter($letter) {
     $results = ['message' => 'No results found for ' . $letter];
     $status = 200;
-    if (!empty($letter) && preg_match("/^[a-zA-Z]$/", strtoupper($letter))) {
+    if (!empty($letter) && preg_match("/^[a-zA-Z]$/", mb_strtoupper($letter))) {
       $query = $this->entityQuery->get('taxonomy_term');
       $vid = $this->getTheCorrectVocab();
       $query->condition('name', $letter, 'STARTS_WITH');
@@ -108,11 +107,14 @@ class TermGlossaryController extends ControllerBase {
             'description' => $term->getDescription(),
           ];
         }
-        \Drupal::moduleHandler()->invokeAll('term_glossary_alter_results', [
-          &$results,
-          $terms,
-          $letter,
-        ]);
+        /* Find the way to call invokeAll function with Drupal 9
+        /*
+        /* \Drupal::moduleHandler()->invokeAll('term_glossary_alter_results', [
+        &$results,
+        $terms,
+        $letter,
+        ]
+        );*/
       }
     }
     return new JsonResponse($results, $status);
@@ -131,11 +133,13 @@ class TermGlossaryController extends ControllerBase {
       'tid' => $term->id(),
       'description' => $term->getDescription(),
     ];
-    \Drupal::moduleHandler()->invokeAll('term_glossary_alter_result', [
-      &$results,
-      $term,
-      $tid,
-    ]);
+    /* Find the way to call invokeAll function with Drupal 9
+    /*
+    /* \Drupal::moduleHandler()->invokeAll('term_glossary_alter_result', [
+    &$results,
+    $term,
+    $tid,
+    ]); */
     return new JsonResponse($results, $status);
   }
 
@@ -179,11 +183,13 @@ class TermGlossaryController extends ControllerBase {
             ];
             // Perhaps fire hook to include more.
           }
-          \Drupal::moduleHandler()->invokeAll('term_glossary_alter_results', [
-            &$results,
-            $terms,
-            $term,
-          ]);
+          /* Find the way to call invokeAll function with Drupal 9
+          /*
+          /* \Drupal::moduleHandler()->invokeAll('term_glossary_alter_results',[
+          /* &$results,
+          /* $terms,
+          /* $term,
+          /* ]); */
         }
 
       }

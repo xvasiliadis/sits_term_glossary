@@ -8,9 +8,10 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * Class TermGlossaryConfigForm.
+ * Class TermGlossaryConfigForm definition.
  */
 class TermGlossaryConfigForm extends ConfigFormBase {
 
@@ -29,17 +30,26 @@ class TermGlossaryConfigForm extends ConfigFormBase {
   protected $entityFieldManager;
 
   /**
+   * Symfony\Component\HttpFoundation\RequestStack definition.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  protected $requestStack;
+
+  /**
    * Constructs a new GlossaryConfigForm object.
    */
   public function __construct(
     ConfigFactoryInterface $config_factory,
     EntityTypeManagerInterface $entity_type_manager,
-    EntityFieldManagerInterface $entity_field_manager
+    EntityFieldManagerInterface $entity_field_manager,
+    RequestStack $request_stack
   ) {
     parent::__construct($config_factory);
     $this->entityTypeManager = $entity_type_manager;
     $this->entityFieldManager = $entity_field_manager;
     $this->configFactory = $config_factory;
+    $this->requestStack = $request_stack;
   }
 
   /**
@@ -49,7 +59,8 @@ class TermGlossaryConfigForm extends ConfigFormBase {
     return new static(
       $container->get('config.factory'),
       $container->get('entity_type.manager'),
-      $container->get('entity_field.manager')
+      $container->get('entity_field.manager'),
+      $container->get('request_stack')
     );
   }
 
@@ -67,6 +78,22 @@ class TermGlossaryConfigForm extends ConfigFormBase {
    */
   public function getFormId() {
     return 'glossary_config_form';
+  }
+
+  /**
+   * Sets default value.
+   */
+  public function setItemValue($extra) {
+    foreach ($extra['start'] as $key => $val) {
+      if (is_array($val)) {
+        foreach ($val as $item_key => $item_value) {
+          if (is_array($item_value) && !empty($item_value['#type']) && $item_value['#type'] == 'checkbox') {
+            $extra['start'][$key][$item_key]['#default_value'] = 1;
+          }
+        }
+      }
+    }
+    return $extra;
   }
 
   /**
@@ -124,7 +151,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
         'method' => 'replace',
         'progress' => [
           'type' => 'throbber',
-          'message' => t('loading fields...'),
+          'message' => $this->t('loading fields...'),
         ],
       ],
     ];
@@ -133,15 +160,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
       $field_array = $config->get('selected_fields');
       $form['content_types']['#suffix'] = '';
       $extra = $this->translateToCheckboxes($field_array);
-      foreach ($extra['start'] as $key => $val) {
-        if (is_array($val)) {
-          foreach ($val as $item_key => $item_value) {
-            if (is_array($item_value) && !empty($item_value['#type']) && $item_value['#type'] == 'checkbox') {
-              $extra['start'][$key][$item_key]['#default_value'] = 1;
-            }
-          }
-        }
-      }
+      $extra = $this->setItemValue($extra);
       $form = array_merge($form, $extra);
     }
 
@@ -150,8 +169,8 @@ class TermGlossaryConfigForm extends ConfigFormBase {
       '#title' => 'Select integration type',
       '#default_value' => $config->get('integration_type') ?: '',
       '#options' => [
-        'custom_js' => 'CUSTOM JS: span class (glos-term) and Add "data-gterm=" which is the term id',
-        'default' => 'Jquery ui dialog with the term name and description',
+        'custom_js' => $this->t('CUSTOM JS: span class (glos-term) and Add "data-gterm=" which is the term id'),
+        'default' => $this->t('Jquery ui dialog with the term name and description'),
       ],
       '#description' => $this->t('This sets what will happen when a glossary term is found in content if <br/> if you select "CUSTOM JS" its up to you to handle the javascript side of what happens when some one clicks a term'),
     ];
@@ -262,7 +281,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
       '#title' => 'Fields',
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
-      '#description' => 'Each field selected will be scanned for glossary text on content save.',
+      '#description' => $this->t('Each field selected will be scanned for glossary text on content save.'),
       '#prefix' => '<div id="content_ender_here">',
       '#suffix' => '</div>',
     ];
@@ -303,8 +322,8 @@ class TermGlossaryConfigForm extends ConfigFormBase {
     $data = [];
     if (!empty($selected)) {
       foreach ($selected as $content_type) {
-        foreach ($_POST as $key => $value) {
-          if ( (!empty($content_type) && strpos($key, $content_type) !== FALSE)) {
+        foreach ($this->requestStack->getCurrentRequest()->request->all() as $key => $value) {
+          if ((!empty($content_type) && strpos($key, $content_type) !== FALSE)) {
             $explode = explode('~', $key);
             $data[$content_type][] = $explode[1];
           }

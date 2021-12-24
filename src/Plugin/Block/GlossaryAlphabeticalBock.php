@@ -117,9 +117,9 @@ class GlossaryAlphabeticalBock extends BlockBase implements ContainerFactoryPlug
       '#default_value' => $this->configuration['search_type'],
       '#required' => TRUE,
       '#options' => [
-        'search_only' => 'Search Box only',
-        'all' => 'Search box and letters',
-        'only_letters' => 'Only Letters',
+        'search_only' => $this->t('Search Box only'),
+        'all' => $this->t('Search box and letters'),
+        'only_letters' => $this->t('Only Letters'),
       ],
     ];
     return $form;

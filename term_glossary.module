@@ -68,7 +68,7 @@ function term_glossary_node_presave(EntityInterface $entity) {
                 $value_raw = $entity->{$field_name_to_scan}->value;
                 if (!empty($value_raw)) {
                   $new_value = _replace_field_value($value_raw, $term_list);
-                  // @TODO We need to check field config for this.
+                  // @todo We need to check field config for this.
                   if ($field_name_to_scan == 'body') {
                     $entity->{$field_name_to_scan} = [
                       'format' => 'full_html',
@@ -153,7 +153,7 @@ function _replace_entity_ref_fields_values($entities, $term_list) {
  *   returns a string.
  */
 function _replace_field_value($value_raw, $term_list) {
-  // @TODO Here handle more field types.
+  // @todo Here handle more field types.
   $new_value = '';
   if (!empty($value_raw)) {
     $new_value = $value_raw;
@@ -182,7 +182,7 @@ function term_glossary_node_view(array &$build, EntityInterface $entity, EntityV
     $config = _glossary_get_config();
     $selected_types = _glossary_get_config_content_types($config);
     if (!empty($selected_types) && in_array($type, $selected_types)) {
-      // @TODO support make this configurable.
+      // @todo support make this configurable.
       $integration_type = $config->get('integration_type');
       if ($view_mode == 'full' && $integration_type == 'default') {
         $build['#attached']['library'][] = 'term_glossary/glossary-css';
