@@ -1,10 +1,9 @@
 {
-    "name": "home-sits-reference/term_glossary",
+    "name": "home-sits-reference/sits_term_glossary",
     "version": "1.0",
     "description": "An example composer.json file for a custom module.",
     "type": "drupal-custom-module",
     "license": "GPL-2.0+",
-    "homepage": "https://www.drupal.org",
     "minimum-stability": "stable",
     "require": {    },
     "extra": {

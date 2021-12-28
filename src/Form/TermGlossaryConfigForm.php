@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\term_glossary\Form;
+namespace Drupal\sits_term_glossary\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -100,7 +100,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $config = $this->config('term_glossary.glossaryconfig');
+    $config = $this->config('sits_term_glossary.glossaryconfig');
 
     $vocab_types = $this->entityTypeManager->getStorage('taxonomy_vocabulary')
       ->loadMultiple();
@@ -331,7 +331,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
       }
     }
 
-    $this->configFactory->getEditable('term_glossary.glossaryconfig')
+    $this->configFactory->getEditable('sits_term_glossary.glossaryconfig')
       ->set('vocab', $form_state->getValue('vocab'))
       ->set('content_types', $form_state->getValue('content_types'))
       ->set('selected_fields', $data)

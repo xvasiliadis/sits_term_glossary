@@ -47,7 +47,7 @@
                             document.dispatchEvent(event);
 
                            /*
-                            HOOK for Modal if using "hook_term_glossary_alter_result"
+                            HOOK for Modal if using "hook_sits_term_glossary_alter_result"
                             use to append custom data to the modal.
                             document.addEventListener('glossary_modal_show', function (e) {
                                 console.log(e);

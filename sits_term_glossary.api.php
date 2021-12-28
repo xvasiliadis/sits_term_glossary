@@ -8,7 +8,7 @@
 /**
  * Hook to alter the results of the search.
  *
- * See Drupal\term_glossary\Controller::apiSearchPerTerm 172.
+ * See Drupal\sits_term_glossary\Controller::apiSearchPerTerm 172.
  *
  * @param mixed $results
  *   Array of term key vals for js.
@@ -17,14 +17,14 @@
  * @param mixed $search_term
  *   The search term or letter.
  */
-function hook_term_glossary_alter_results(&$results, $terms, $search_term) {
+function hook_sits_term_glossary_alter_results(&$results, $terms, $search_term) {
   // Here alter the results.
 }
 
 /**
  * Hook to alter the results term by id modal.
  *
- * See Drupal\term_glossary\Controller::apiGetTermById.
+ * See Drupal\sits_term_glossary\Controller::apiGetTermById.
  *
  * See JS hook in assets/js/glossary-content-dialog.js line 50
  *
@@ -35,6 +35,6 @@ function hook_term_glossary_alter_results(&$results, $terms, $search_term) {
  * @param string $term_id
  *   String of the search term id.
  */
-function hook_term_glossary_alter_result(&$result, $term, $term_id) {
+function hook_sits_term_glossary_alter_result(&$result, $term, $term_id) {
   // Here alter the results.
 }

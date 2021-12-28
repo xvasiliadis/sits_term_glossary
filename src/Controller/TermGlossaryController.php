@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\term_glossary\Controller;
+namespace Drupal\sits_term_glossary\Controller;
 
 use Drupal\Core\Config\ConfigManagerInterface;
 use Drupal\Core\Controller\ControllerBase;
@@ -109,7 +109,7 @@ class TermGlossaryController extends ControllerBase {
         }
         /* Find the way to call invokeAll function with Drupal 9
         /*
-        /* \Drupal::moduleHandler()->invokeAll('term_glossary_alter_results', [
+        /* \Drupal::moduleHandler()->invokeAll('sits_term_glossary_alter_results', [
         &$results,
         $terms,
         $letter,
@@ -135,7 +135,7 @@ class TermGlossaryController extends ControllerBase {
     ];
     /* Find the way to call invokeAll function with Drupal 9
     /*
-    /* \Drupal::moduleHandler()->invokeAll('term_glossary_alter_result', [
+    /* \Drupal::moduleHandler()->invokeAll('sits_term_glossary_alter_result', [
     &$results,
     $term,
     $tid,
@@ -185,7 +185,7 @@ class TermGlossaryController extends ControllerBase {
           }
           /* Find the way to call invokeAll function with Drupal 9
           /*
-          /* \Drupal::moduleHandler()->invokeAll('term_glossary_alter_results',[
+          /* \Drupal::moduleHandler()->invokeAll('sits_term_glossary_alter_results',[
           /* &$results,
           /* $terms,
           /* $term,
@@ -206,7 +206,7 @@ class TermGlossaryController extends ControllerBase {
   private function getTheCorrectVocab() {
     // @todo replace this with config.
     $config = $this->configManager->getConfigFactory();
-    $config = $config->get('term_glossary.glossaryconfig');
+    $config = $config->get('sits_term_glossary.glossaryconfig');
     if (empty($config->get('vocab'))) {
       throw new \Exception('glossary has not been configured yet');
     }

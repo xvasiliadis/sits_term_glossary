@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains term_glossary.module.
+ * Contains sits_term_glossary.module.
  */
 
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
@@ -14,10 +14,10 @@ use Drupal\Core\Config\ImmutableConfig;
 /**
  * Implements hook_help().
  */
-function term_glossary_help($route_name, RouteMatchInterface $route_match) {
+function sits_term_glossary_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     // Main module help for the glossary module.
-    case 'help.page.term_glossary':
+    case 'help.page.sits_term_glossary':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('glossary module for plan') . '</p>';
@@ -30,7 +30,7 @@ function term_glossary_help($route_name, RouteMatchInterface $route_match) {
 /**
  * Implements hook_theme().
  */
-function term_glossary_theme() {
+function sits_term_glossary_theme() {
   return [
     'glossary_alphabetical_bock' => [
       'variables' => [
@@ -46,7 +46,7 @@ function term_glossary_theme() {
 /**
  * Implements hook_ENTITY_TYPE_presave().
  */
-function term_glossary_node_presave(EntityInterface $entity) {
+function sits_term_glossary_node_presave(EntityInterface $entity) {
   $type = $entity->getType();
   if (!empty($type)) {
     $config = _glossary_get_config();
@@ -176,7 +176,7 @@ function _replace_field_value($value_raw, $term_list) {
 /**
  * Implements hook_ENTITY_TYPE_view().
  */
-function term_glossary_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+function sits_term_glossary_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
   $type = $entity->getType();
   if (!empty($type)) {
     $config = _glossary_get_config();
@@ -185,8 +185,8 @@ function term_glossary_node_view(array &$build, EntityInterface $entity, EntityV
       // @todo support make this configurable.
       $integration_type = $config->get('integration_type');
       if ($view_mode == 'full' && $integration_type == 'default') {
-        $build['#attached']['library'][] = 'term_glossary/glossary-css';
-        $build['#attached']['library'][] = 'term_glossary/glossary-js';
+        $build['#attached']['library'][] = 'sits_term_glossary/glossary-css';
+        $build['#attached']['library'][] = 'sits_term_glossary/glossary-js';
         $build['glossary-dialog'] = [
           '#markup' => '<div id="glossary-dialog" title="Term definition"><div id="glossary-dialog-inner"></div></div>',
         ];
@@ -275,7 +275,7 @@ function _glossary_get_selected_fields_from_config(ImmutableConfig $config, $con
  */
 function _glossary_get_config() {
   $configFactory = \Drupal::service('config.manager')->getConfigFactory();
-  return $configFactory->get('term_glossary.glossaryconfig');
+  return $configFactory->get('sits_term_glossary.glossaryconfig');
 }
 
 /**

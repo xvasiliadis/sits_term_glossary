@@ -1,6 +1,6 @@
 name: 'Taxonomy Term Glossary'
 type: module
-description: 'Glossary module for Drupal made by XVT Solutions'
+description: 'Glossary module for Drupal made by Unisystems'
 core: 8.x
 php: 7.4
 core_version_requirement: ^8 || ^9

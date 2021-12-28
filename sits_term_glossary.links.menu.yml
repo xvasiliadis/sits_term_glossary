@@ -1,6 +1,6 @@
-term_glossary.glossary_config_form:
+sits_term_glossary.glossary_config_form:
   title: 'Glossary Configuration'
-  route_name: term_glossary.glossary_config_form
+  route_name: sits_term_glossary.glossary_config_form
   description: 'A description for the menu entry'
   parent: system.admin_config_system
   weight: 99

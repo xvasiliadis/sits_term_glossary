@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\term_glossary\Plugin\Block;
+namespace Drupal\sits_term_glossary\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Config\ConfigManagerInterface;
@@ -139,7 +139,7 @@ class GlossaryAlphabeticalBock extends BlockBase implements ContainerFactoryPlug
     $build = [];
     $build['#theme'] = 'glossary_alphabetical_bock';
     $build['#type'] = $this->configuration['search_type'];
-    $build['#attached']['library'][] = 'term_glossary/glossary.alpha';
+    $build['#attached']['library'][] = 'sits_term_glossary/glossary.alpha';
     return $build;
   }
 
