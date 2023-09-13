@@ -49,15 +49,15 @@ function sits_term_glossary_theme() {
 function sits_term_glossary_node_presave(EntityInterface $entity) {
   $type = $entity->getType();
   if (!empty($type)) {
-    $config = _glossary_get_config();
-    $selected_types = _glossary_get_config_content_types($config);
+    $config = _sits_term_glossary_get_config();
+    $selected_types = _sits_term_glossary_get_config_content_types($config);
     if (!empty($selected_types) && in_array($type, $selected_types)) {
       // Ok this content type is enabled now lets get the fields.
-      $scan_fields = _glossary_get_selected_fields_from_config($config, $type);
+      $scan_fields = _sits_term_glossary_get_selected_fields_from_config($config, $type);
       if (!empty($scan_fields)) {
         // Here get terms.
         $vocab = $config->get('vocab');
-        $term_list = _glossary_get_terms($vocab);
+        $term_list = _sits_term_glossary_get_terms($vocab);
         if (!empty($term_list)) {
           // Ok cool we have at least one term now lets do stuff.
           foreach ($scan_fields as $field_name_to_scan) {
@@ -67,7 +67,7 @@ function sits_term_glossary_node_presave(EntityInterface $entity) {
               if (!empty($entity->{$field_name_to_scan}->value)) {
                 $value_raw = $entity->{$field_name_to_scan}->value;
                 if (!empty($value_raw)) {
-                  $new_value = _replace_field_value($value_raw, $term_list);
+                  $new_value = _sits_term_glossary_replace_field_value($value_raw, $term_list);
                   // @todo We need to check field config for this.
                   if ($field_name_to_scan == 'body') {
                     $entity->{$field_name_to_scan} = [
@@ -85,7 +85,7 @@ function sits_term_glossary_node_presave(EntityInterface $entity) {
             if ($class == 'Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList') {
               if (!empty($entity->{$field_name_to_scan}->referencedEntities())) {
                 $entities = $entity->{$field_name_to_scan}->referencedEntities();
-                _replace_entity_ref_fields_values($entities, $term_list);
+                _sits_term_glossary_replace_entity_ref_fields_values($entities, $term_list);
               }
             }
           }
@@ -103,7 +103,7 @@ function sits_term_glossary_node_presave(EntityInterface $entity) {
  * @param array|null $term_list
  *   Array of term lists.
  */
-function _replace_entity_ref_fields_values($entities, $term_list) {
+function _sits_term_glossary_replace_entity_ref_fields_values($entities, $term_list) {
   // This is used so our paragraph fields can be scanned as well.
   $accept_only = [
     'text_with_summary',
@@ -123,7 +123,7 @@ function _replace_entity_ref_fields_values($entities, $term_list) {
             if (in_array($field_type, $accept_only)) {
               $value_raw = $entity->{$key}->value;
               if (!empty($value_raw)) {
-                $new_value = _replace_field_value($value_raw, $term_list);
+                $new_value = _sits_term_glossary_replace_field_value($value_raw, $term_list);
                 $entity->{$key} = [
                   'format' => 'full_html',
                   'value' => $new_value,
@@ -152,7 +152,7 @@ function _replace_entity_ref_fields_values($entities, $term_list) {
  * @return string
  *   returns a string.
  */
-function _replace_field_value($value_raw, $term_list) {
+function _sits_term_glossary_replace_field_value($value_raw, $term_list) {
   // @todo Here handle more field types.
   $new_value = '';
   if (!empty($value_raw)) {
@@ -179,8 +179,8 @@ function _replace_field_value($value_raw, $term_list) {
 function sits_term_glossary_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
   $type = $entity->getType();
   if (!empty($type)) {
-    $config = _glossary_get_config();
-    $selected_types = _glossary_get_config_content_types($config);
+    $config = _sits_term_glossary_get_config();
+    $selected_types = _sits_term_glossary_get_config_content_types($config);
     if (!empty($selected_types) && in_array($type, $selected_types)) {
       // @todo support make this configurable.
       $integration_type = $config->get('integration_type');
@@ -188,6 +188,7 @@ function sits_term_glossary_node_view(array &$build, EntityInterface $entity, En
         $build['#attached']['library'][] = 'sits_term_glossary/glossary-css';
         $build['#attached']['library'][] = 'sits_term_glossary/glossary-js';
         $build['glossary-dialog'] = [
+          '#type' => 'markup',
           '#markup' => '<div id="glossary-dialog" title="Term definition"><div id="glossary-dialog-inner"></div></div>',
         ];
       }
@@ -207,7 +208,7 @@ function sits_term_glossary_node_view(array &$build, EntityInterface $entity, En
  * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
  * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
  */
-function _glossary_get_terms($vocab) {
+function _sits_term_glossary_get_terms($vocab) {
   $cid = 'glossary_terms_array';
   $data = \Drupal::cache()->get($cid);
   if (empty($data)) {
@@ -253,7 +254,7 @@ function _glossary_get_terms($vocab) {
 /**
  * Helper function to get field form config.
  */
-function _glossary_get_selected_fields_from_config(ImmutableConfig $config, $content_type) {
+function _sits_term_glossary_get_selected_fields_from_config(ImmutableConfig $config, $content_type) {
   $fields = [];
   $raw = $config->get('selected_fields');
   if ($content_type == 'all') {
@@ -273,7 +274,7 @@ function _glossary_get_selected_fields_from_config(ImmutableConfig $config, $con
  * @return mixed
  *   Returns the config object or null.
  */
-function _glossary_get_config() {
+function _sits_term_glossary_get_config() {
   $configFactory = \Drupal::service('config.manager')->getConfigFactory();
   return $configFactory->get('sits_term_glossary.glossaryconfig');
 }
@@ -287,7 +288,7 @@ function _glossary_get_config() {
  * @return array
  *   Returns an array I hope.
  */
-function _glossary_get_config_content_types(ImmutableConfig $config) {
+function _sits_term_glossary_get_config_content_types(ImmutableConfig $config) {
   $return = [];
   $selected_config = $config->get('content_types');
   if (!empty($selected_config)) {

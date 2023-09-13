@@ -3,7 +3,7 @@ glossary.alpha:
     theme:
       assets/css/style.css: {}
   js:
-    assets/js/block-alpah.js: {}
+    assets/js/block-alpha.js: {}
   dependencies:
     - core/jquery
     - core/drupalSettings
@@ -20,6 +20,7 @@ glossary-js:
     assets/js/glossary-content-dialog.js: {}
   dependencies:
     - core/jquery
+    - core/jquery.ui.dialog
     - core/drupalSettings
     - core/drupal
     - core/jquery.once

@@ -10,12 +10,10 @@
             if (context === document) {
                 // Set up stuff here.
             }
-
-            $('.glos-term').once().on('click', function (event) {
+            $('.glos-term').once('glossaryListenner').on('click', function (event) {
                 event.preventDefault();
                 var termId = $(this).data('gterm');
                 var termText = $(this).text();
-                // Var string = '<div id="glossary-dialog" title="Term definition"><div id="glossary-dialog-inner">Loading ..</div></div>';.
                 $('#glossary-dialog').dialog({
                     autoOpen: true,
                     resizable: false,
@@ -26,13 +24,12 @@
                     buttons: {
                         Close: function () {
                             $(this).dialog('close');
-                            // $(this).dialog('destroy').remove();
                             $('#glossary-dialog-inner').html('');
                         }
                     }
                 });
                 // Call Ajax here.
-                var url = '/web/glossary-get-term-by-id/' + termId;
+                var url = Drupal.url('glossary-get-term-by-id/' + termId);
                 $.ajax({
                     url:url,
                     dataType: "json",
@@ -45,18 +42,6 @@
 
                             var event = new CustomEvent('glossary_modal_show', { detail: data });
                             document.dispatchEvent(event);
-
-                           /*
-                            HOOK for Modal if using "hook_sits_term_glossary_alter_result"
-                            use to append custom data to the modal.
-                            document.addEventListener('glossary_modal_show', function (e) {
-                                console.log(e);
-                                //alert(detail.name);
-                                $('#glossary-dialog-inner').once().append('<h2>test</h2>');
-                            }, false);
-
-                            */
-
                         }
                         else {
                             $('#glossary-dialog-inner').html('No results found for' + termText);

@@ -4,8 +4,9 @@ namespace Drupal\sits_term_glossary\Controller;
 
 use Drupal\Core\Config\ConfigManagerInterface;
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Database\Driver\mysql\Connection;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -17,9 +18,9 @@ use Drupal\Component\Utility\Html;
 class TermGlossaryController extends ControllerBase {
 
   /**
-   * Drupal\Core\Database\Driver\mysql\Connection definition.
+   * Drupal\Core\Database\Connection definition.
    *
-   * @var \Drupal\Core\Database\Driver\mysql\Connection
+   * @var \Drupal\Core\Database\Connection
    */
   protected $database;
 
@@ -52,20 +53,26 @@ class TermGlossaryController extends ControllerBase {
   protected $requestStack;
 
   /**
+   *
+   * @var \Drupal\Core\Entity\EntityRepositoryInterface
+   */
+  protected $entity_repository;
+
+  /**
    * Constructs a new GlossaryController object.
    */
   public function __construct(
     Connection $database,
     EntityTypeManagerInterface $entity_type_manager,
-    // ContainerAwareInterface $entity_query,.
     ConfigManagerInterface $config_manager,
-    RequestStack $request_stack
+    RequestStack $request_stack,
+    EntityRepositoryInterface $entity_repository
   ) {
     $this->database = $database;
     $this->entityTypeManager = $entity_type_manager;
-    // $this->entityQuery = $entity_query;
     $this->configManager = $config_manager;
     $this->requestStack = $request_stack;
+    $this->entity_repository = $entity_repository;
   }
 
   /**
@@ -75,9 +82,9 @@ class TermGlossaryController extends ControllerBase {
     return new static(
       $container->get('database'),
       $container->get('entity_type.manager'),
-      // $container->get('entity.query'),
       $container->get('config.manager'),
-      $container->get('request_stack')
+      $container->get('request_stack'),
+      $container->get('entity.repository')
     );
   }
 
@@ -107,14 +114,6 @@ class TermGlossaryController extends ControllerBase {
             'description' => $term->getDescription(),
           ];
         }
-        /* Find the way to call invokeAll function with Drupal 9
-        /*
-        /* \Drupal::moduleHandler()->invokeAll('sits_term_glossary_alter_results', [
-        &$results,
-        $terms,
-        $letter,
-        ]
-        );*/
       }
     }
     return new JsonResponse($results, $status);
@@ -133,13 +132,6 @@ class TermGlossaryController extends ControllerBase {
       'tid' => $term->id(),
       'description' => $term->getDescription(),
     ];
-    /* Find the way to call invokeAll function with Drupal 9
-    /*
-    /* \Drupal::moduleHandler()->invokeAll('sits_term_glossary_alter_result', [
-    &$results,
-    $term,
-    $tid,
-    ]); */
     return new JsonResponse($results, $status);
   }
 
@@ -183,13 +175,6 @@ class TermGlossaryController extends ControllerBase {
             ];
             // Perhaps fire hook to include more.
           }
-          /* Find the way to call invokeAll function with Drupal 9
-          /*
-          /* \Drupal::moduleHandler()->invokeAll('sits_term_glossary_alter_results',[
-          /* &$results,
-          /* $terms,
-          /* $term,
-          /* ]); */
         }
 
       }
