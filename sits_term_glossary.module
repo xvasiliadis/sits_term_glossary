@@ -5,16 +5,15 @@
  * Contains sits_term_glossary.module.
  */
 
-use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Config\ImmutableConfig;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
 
 /**
  * Implements hook_help().
  */
-function sits_term_glossary_help($route_name, RouteMatchInterface $route_match) {
+function sits_term_glossary_help($route_name) {
   switch ($route_name) {
     // Main module help for the glossary module.
     case 'help.page.sits_term_glossary':
@@ -48,50 +47,80 @@ function sits_term_glossary_theme() {
  */
 function sits_term_glossary_node_presave(EntityInterface $entity) {
   $type = $entity->getType();
-  if (!empty($type)) {
-    $config = _sits_term_glossary_get_config();
-    $selected_types = _sits_term_glossary_get_config_content_types($config);
-    if (!empty($selected_types) && in_array($type, $selected_types)) {
-      // Ok this content type is enabled now lets get the fields.
-      $scan_fields = _sits_term_glossary_get_selected_fields_from_config($config, $type);
-      if (!empty($scan_fields)) {
-        // Here get terms.
-        $vocab = $config->get('vocab');
-        $term_list = _sits_term_glossary_get_terms($vocab);
-        if (!empty($term_list)) {
-          // Ok cool we have at least one term now lets do stuff.
-          foreach ($scan_fields as $field_name_to_scan) {
-            $value_raw = NULL;
-            $class = get_class($entity->{$field_name_to_scan});
-            if ($class == 'Drupal\Core\Field\FieldItemList') {
-              if (!empty($entity->{$field_name_to_scan}->value)) {
-                $value_raw = $entity->{$field_name_to_scan}->value;
-                if (!empty($value_raw)) {
-                  $new_value = _sits_term_glossary_replace_field_value($value_raw, $term_list);
-                  // @todo We need to check field config for this.
-                  if ($field_name_to_scan == 'body') {
-                    $entity->{$field_name_to_scan} = [
-                      'format' => 'full_html',
-                      'value' => $new_value,
-                    ];
-                  }
-                  else {
-                    $entity->set($field_name_to_scan, $new_value);
-                  }
-                }
-              }
-            }
 
-            if ($class == 'Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList') {
-              if (!empty($entity->{$field_name_to_scan}->referencedEntities())) {
-                $entities = $entity->{$field_name_to_scan}->referencedEntities();
-                _sits_term_glossary_replace_entity_ref_fields_values($entities, $term_list);
-              }
-            }
-          }
-        }
+  $config = _sits_term_glossary_get_config();
+  $selected_types = _sits_term_glossary_get_config_content_types($config);
+
+  if (sits_term_glossary_is_valid_type($type, $selected_types)) {
+    $scan_fields = _sits_term_glossary_get_selected_fields_from_config($config, $type);
+    sits_term_glossary_process_scan_fields($entity, $scan_fields, $config);
+  }
+}
+
+/**
+ * Check if the content type is valid.
+ */
+function sits_term_glossary_is_valid_type($type, $selected_types) {
+  return !empty($type) && !empty($selected_types) && in_array($type, $selected_types);
+}
+
+/**
+ * Process the scan fields.
+ */
+function sits_term_glossary_process_scan_fields(EntityInterface $entity, $scan_fields, ImmutableConfig $config) {
+  if (!empty($scan_fields)) {
+    $vocab = $config->get('vocab');
+    $term_list = _sits_term_glossary_get_terms($vocab);
+    if (!empty($term_list)) {
+      foreach ($scan_fields as $field_name_to_scan) {
+        sits_term_glossary_process_single_field($entity, $field_name_to_scan, $term_list);
       }
     }
+  }
+}
+
+/**
+ * Process a single field.
+ */
+function sits_term_glossary_process_single_field(EntityInterface $entity, $field_name_to_scan, $term_list) {
+  // $value_raw = NULL;
+  $class = get_class($entity->{$field_name_to_scan});
+  if ($class == 'Drupal\Core\Field\FieldItemList') {
+    sits_term_glossary_process_field_item_list($entity, $field_name_to_scan, $term_list);
+  }
+  if ($class == 'Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList') {
+    sits_term_glossary_process_entity_reference_revisions_field_item_list($entity, $field_name_to_scan, $term_list);
+  }
+}
+
+/**
+ * Process Drupal\Core\Field\FieldItemList class.
+ */
+function sits_term_glossary_process_field_item_list(EntityInterface $entity, $field_name_to_scan, $term_list) {
+  if (!empty($entity->{$field_name_to_scan}->value)) {
+    $value_raw = $entity->{$field_name_to_scan}->value;
+    if ($value_raw) {
+      $new_value = _sits_term_glossary_replace_field_value($value_raw, $term_list);
+      if ($field_name_to_scan == 'body') {
+        $entity->{$field_name_to_scan} = [
+          'format' => 'full_html',
+          'value' => $new_value,
+        ];
+        // Early return after the processing is done.
+        return;
+      }
+      $entity->set($field_name_to_scan, $new_value);
+    }
+  }
+}
+
+/**
+ * Process Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItLst.
+ */
+function sits_term_glossary_process_entity_reference_revisions_field_item_list(EntityInterface $entity, $field_name_to_scan, $term_list) {
+  if (!empty($entity->{$field_name_to_scan}->referencedEntities())) {
+    $entities = $entity->{$field_name_to_scan}->referencedEntities();
+    _sits_term_glossary_replace_entity_ref_fields_values($entities, $term_list);
   }
 }
 
@@ -154,22 +183,27 @@ function _sits_term_glossary_replace_entity_ref_fields_values($entities, $term_l
  */
 function _sits_term_glossary_replace_field_value($value_raw, $term_list) {
   // @todo Here handle more field types.
+  $is_single__match = \Drupal::config('sits_term_glossary.glossaryconfig')->get('single_match');
   $new_value = '';
   if (!empty($value_raw)) {
     $new_value = $value_raw;
     foreach ($term_list as $term_id => $term_array) {
-      $name = $term_array['name'];
-      $replace_string = '<span class="glos-term" data-gterm="' . $term_id . '">' . $name . '</span>';
-
-      if (strpos($replace_string, $new_value) !== FALSE) {
-        // Yes it has been replaced.
-      }
-      else {
-        $new_value = str_ireplace($name, $replace_string, $new_value);
+      $name = preg_quote($term_array['name'], '/');
+      preg_match_all("/$name+/i", $new_value, $matches);
+      if (is_array($matches[0]) && count($matches[0]) >= 1) {
+        $matches = array_unique($matches[0]);
+        foreach ($matches as $match) {
+          if ($is_single__match) {
+            $offset = strpos($new_value, $match);
+            $length = strlen($match);
+            $new_value = substr_replace($new_value, '<span class="glos-term" data-gterm="' . $term_id . '">' . $match . '</span>', $offset, $length);
+            break;
+          }
+          $new_value = str_replace($match, '<span class="glos-term" data-gterm="' . $term_id . '">' . $match . '</span>', $new_value);
+        }
       }
     }
   }
-
   return $new_value;
 }
 
@@ -211,44 +245,31 @@ function sits_term_glossary_node_view(array &$build, EntityInterface $entity, En
 function _sits_term_glossary_get_terms($vocab) {
   $cid = 'glossary_terms_array';
   $data = \Drupal::cache()->get($cid);
-  if (empty($data)) {
-    $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
-    $terms = $term_storage->loadByProperties(['vid' => $vocab]);
-    $terms_array = [];
-    foreach ($terms as $tid => $term) {
-      $terms_array[$tid] = [
-        'tid' => $tid,
-        'name' => $term->getName(),
-      ];
-    }
-    $terms = $terms_array;
-    \Drupal::cache()->set($cid, $terms_array, CacheBackendInterface::CACHE_PERMANENT, []);
-  }
-  else {
-    $query = \Drupal::entityQuery('taxonomy_term');
-    $query->condition('vid', $vocab);
+  if (!empty($data)) {
+    $query = \Drupal::entityQuery('taxonomy_term')
+      ->condition('vid', $vocab)
+      ->accessCheck(TRUE);
     $entity_ids = $query->execute();
-    // Someone could have added new term since last cache.
-    if (count($entity_ids) == count($data->data)) {
-      $terms = $data->data;
-    }
-    else {
-      // Set cache again.
-      $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
-      $terms = $term_storage->loadByProperties(['vid' => $vocab]);
-      $terms_array = [];
-      foreach ($terms as $tid => $term) {
-        $terms_array[$tid] = [
-          'tid' => $tid,
-          'name' => $term->getName(),
-        ];
-      }
-      $terms = $terms_array;
-      \Drupal::cache()->set($cid, $terms_array, CacheBackendInterface::CACHE_PERMANENT, []);
-    }
 
+    // If count matches, return from cache.
+    if (count($entity_ids) == count($data->data)) {
+      return $data->data;
+    }
   }
-  return $terms;
+
+  // Cache is empty OR count doesn't match. Load terms and cache them.
+  $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+  $terms = $term_storage->loadByProperties(['vid' => $vocab]);
+  $terms_array = [];
+  foreach ($terms as $tid => $term) {
+    $terms_array[$tid] = [
+      'tid' => $tid,
+      'name' => $term->getName(),
+    ];
+  }
+  \Drupal::cache()->set($cid, $terms_array, CacheBackendInterface::CACHE_PERMANENT, []);
+
+  return $terms_array;
 }
 
 /**
@@ -259,12 +280,14 @@ function _sits_term_glossary_get_selected_fields_from_config(ImmutableConfig $co
   $raw = $config->get('selected_fields');
   if ($content_type == 'all') {
     $fields = $raw;
+    // Return fields directly.
+    return $fields;
   }
-  else {
-    if (!empty($raw[$content_type])) {
-      $fields = $raw[$content_type];
-    }
+
+  if (!empty($raw[$content_type])) {
+    $fields = $raw[$content_type];
   }
+
   return $fields;
 }
 

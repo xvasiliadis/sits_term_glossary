@@ -16,6 +16,9 @@
  *   The array of loaded terms.
  * @param mixed $search_term
  *   The search term or letter.
+ *
+ * @todo The parameters are not currently used in this function but might be
+ *       used by modules that implement this hook.
  */
 function hook_sits_term_glossary_alter_results(&$results, $terms, $search_term) {
   // Here alter the results.
@@ -34,6 +37,9 @@ function hook_sits_term_glossary_alter_results(&$results, $terms, $search_term) 
  *   The loaded term.
  * @param string $term_id
  *   String of the search term id.
+ *
+ * @todo The parameters are not currently used in this function but might be
+ *       used by modules that implement this hook.
  */
 function hook_sits_term_glossary_alter_result(&$result, $term, $term_id) {
   // Here alter the results.

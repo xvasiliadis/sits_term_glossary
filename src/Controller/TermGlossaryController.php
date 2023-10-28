@@ -2,15 +2,16 @@
 
 namespace Drupal\sits_term_glossary\Controller;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Config\ConfigManagerInterface;
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Entity\EntityRepositoryInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\Query\Sql\QueryFactory;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Drupal\Component\Utility\Html;
 
 /**
  * Class TermGlossaryController defenition.
@@ -53,10 +54,11 @@ class TermGlossaryController extends ControllerBase {
   protected $requestStack;
 
   /**
+   * Drupal\Core\Entity\EntityRepositoryInterface definition.
    *
    * @var \Drupal\Core\Entity\EntityRepositoryInterface
    */
-  protected $entity_repository;
+  protected $entityRepository;
 
   /**
    * Constructs a new GlossaryController object.
@@ -66,13 +68,15 @@ class TermGlossaryController extends ControllerBase {
     EntityTypeManagerInterface $entity_type_manager,
     ConfigManagerInterface $config_manager,
     RequestStack $request_stack,
-    EntityRepositoryInterface $entity_repository
+    EntityRepositoryInterface $entityRepository,
+    QueryFactory $entityQuery
   ) {
     $this->database = $database;
     $this->entityTypeManager = $entity_type_manager;
     $this->configManager = $config_manager;
     $this->requestStack = $request_stack;
-    $this->entity_repository = $entity_repository;
+    $this->entityRepository = $entityRepository;
+    $this->entityQuery = $entityQuery;
   }
 
   /**
@@ -84,7 +88,8 @@ class TermGlossaryController extends ControllerBase {
       $container->get('entity_type.manager'),
       $container->get('config.manager'),
       $container->get('request_stack'),
-      $container->get('entity.repository')
+      $container->get('entity.repository'),
+      $container->get('entity.query.sql')
     );
   }
 
@@ -140,45 +145,47 @@ class TermGlossaryController extends ControllerBase {
    */
   public function apiSearchPerTerm() {
     $request = $this->requestStack->getCurrentRequest();
-    // 200 because js is not checking for error.
     $status = 200;
     $results = ['message' => 'error bad request'];
-    if (!empty($request->get('t'))) {
-      // @todo make sure this is "safe" here.
-      $term = Html::escape(trim($request->get('t')));
-      if (!empty($term)) {
-        $results = [];
-        $term_storage = $this->entityTypeManager->getStorage('taxonomy_term');
-        $query = $this->entityQuery->get('taxonomy_term');
-        $vid = $this->getTheCorrectVocab();
-        $query->condition('name', $term, 'CONTAINS');
-        $query->condition('vid', $vid);
-        $entity_ids = $query->execute();
 
-        if (count($entity_ids) == 0) {
-          $query = $this->entityQuery->get('taxonomy_term');
-          $vid = $this->getTheCorrectVocab();
-          $query->condition('name', "%" . $this->database->escapeLike($term) . "%", 'LIKE');
-          $query->condition('vid', $vid);
-          $entity_ids = $query->execute();
-        }
-        if (count($entity_ids) == 0) {
-          $results = ['message' => 'No results found for search therm "' . $term . '"'];
-        }
-        else {
-          $terms = $term_storage->loadMultiple($entity_ids);
-          foreach ($terms as $term) {
-            $results[$term->id()] = [
-              'name' => $term->getName(),
-              'tid' => $term->id(),
-              'description' => $term->getDescription(),
-            ];
-            // Perhaps fire hook to include more.
-          }
-        }
-
-      }
+    if (empty($request->get('t'))) {
+      return new JsonResponse($results, $status);
     }
+
+    $term = Html::escape(trim($request->get('t')));
+    if (empty($term)) {
+      return new JsonResponse($results, $status);
+    }
+
+    $term_storage = $this->entityTypeManager->getStorage('taxonomy_term');
+    $query = $this->entityQuery->get('taxonomy_term');
+    $vid = $this->getTheCorrectVocab();
+    $query->condition('name', $term, 'CONTAINS');
+    $query->condition('vid', $vid);
+    $entity_ids = $query->execute();
+
+    if (count($entity_ids) == 0) {
+      $query = $this->entityQuery->get('taxonomy_term');
+      $vid = $this->getTheCorrectVocab();
+      $query->condition('name', "%" . $this->database->escapeLike($term) . "%", 'LIKE');
+      $query->condition('vid', $vid);
+      $entity_ids = $query->execute();
+    }
+
+    if (count($entity_ids) == 0) {
+      $results = ['message' => 'No results found for search term "' . $term . '"'];
+      return new JsonResponse($results, $status);
+    }
+
+    $terms = $term_storage->loadMultiple($entity_ids);
+    foreach ($terms as $term) {
+      $results[$term->id()] = [
+        'name' => $term->getName(),
+        'tid' => $term->id(),
+        'description' => $term->getDescription(),
+      ];
+    }
+
     return new JsonResponse($results, $status);
   }
 

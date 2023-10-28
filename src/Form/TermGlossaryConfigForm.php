@@ -2,12 +2,12 @@
 
 namespace Drupal\sits_term_glossary\Form;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
@@ -163,6 +163,13 @@ class TermGlossaryConfigForm extends ConfigFormBase {
       $extra = $this->setItemValue($extra);
       $form = array_merge($form, $extra);
     }
+
+    $form['single_match'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Match only once'),
+      '#default_value' => $config->get('single_match'),
+      '#description' => $this->t('If enabled, will only match a single, case-sensitive occurrence of the term.'),
+    ];
 
     $form['integration_type'] = [
       '#type' => 'radios',
@@ -336,6 +343,7 @@ class TermGlossaryConfigForm extends ConfigFormBase {
       ->set('content_types', $form_state->getValue('content_types'))
       ->set('selected_fields', $data)
       ->set('integration_type', $form_state->getValue('integration_type'))
+      ->set('single_match', $form_state->getValue('single_match'))
       ->save();
   }
 
